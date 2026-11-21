@@ -1,4 +1,4 @@
-<!-- v0.1 -->
+<!-- v0.2 -->
 # git_sync
 
 Keep a folder full of git repos in sync from one command.
@@ -221,6 +221,29 @@ link if you made one. The script stores no settings or other files.
 | A repo deeper than 8 levels isn't found | Use `-d 12` (or more). |
 | `bad interpreter` or `$'\r': command not found` | The file picked up Windows line endings. Fix with `sed -i '' 's/\r$//' git_sync.sh` on macOS or `sed -i 's/\r$//' git_sync.sh` on Linux. |
 
+## Resolving merge conflicts: git-resolve.py
+
+`git_sync.sh` leaves a repo alone when a merge, rebase, cherry-pick or revert
+stopped on conflicts. `git-resolve.py` finishes that job. Run it inside the
+repo. It needs Python 3.9 or newer and `git`, nothing else.
+
+It finds every file git left unmerged, shows each `<<<<<<<` / `=======` /
+`>>>>>>>` block with the lines around it, and asks what to keep: **1** ours,
+**2** theirs, **b** both, **e** edit in your git editor, **t** type the
+replacement, **s** skip or **q** quit. When nothing is left unmerged it
+commits with a message that lists every decision, then pushes.
+
+```bash
+chmod +x git-resolve.py
+./git-resolve.py                        # ask about every conflict
+./git-resolve.py --list                 # show what is unmerged (exit 3 if any)
+./git-resolve.py --check                # CI: find committed conflict markers
+./git-resolve.py --take theirs --yes --finish commit   # no prompts
+./git-resolve.py --help                 # full manual
+```
+
+Linked into your `PATH` as `git-resolve`, it also runs as `git resolve`.
+
 <!-- BRICKCHIP-LICENSE:BEGIN -->
 ## Copyright & License
 
@@ -254,6 +277,7 @@ Every file that starts something in this project carries a `BRICKCHIP-ENTRY-POIN
 
 | File | Runs |
 |---|---|
+| `git-resolve.py` | Resolve git conflicts one by one, then commit and push |
 | `git_sync.sh` | Check all repos in a folder; commit, pull and push interactively |
 
 <!-- BRICKCHIP-LICENSE:END -->
