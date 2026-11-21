@@ -1,4 +1,4 @@
-<!-- v0.1 -->
+<!-- v0.2 -->
 # git_sync
 
 Keep a folder full of git repos in sync from one command.
@@ -239,7 +239,7 @@ link if you made one. The script stores no settings or other files.
 ################################################################################
 ```
 
-**Project:** git_sync  
+**Project:** Git-Sync  
 **Copyright:** © 2026 brickChip and Richard Howlett. All rights reserved.  
 **Owner / Author:** Richard Howlett · rhowlett@eenerd.com
 
@@ -247,6 +247,7 @@ All source code, documentation and other files in this project are licensed unde
 
 - **Free** to use, copy, modify and share for any noncommercial purpose: personal, hobby, research, education.
 - **Commercial use** requires a separate written license. This includes selling it, building it into a product or paid service, or using it in for-profit work. Contact rhowlett@eenerd.com.
+- **No warranty, no liability.** It is provided as is. As far as the law allows, the owner is not responsible for any damage or loss arising from its use (see *No Liability* in LICENSE).
 
 ### Entry points
 
