@@ -1,0 +1,93 @@
+# v0.1
+################################################################################
+#  Project   : git_sync
+#  File      : ci.yml
+#  Copyright : (c) 2026 brickChip and Richard Howlett. All rights reserved.
+#  Author    : Richard Howlett <rhowlett@eenerd.com>
+#  License   : PolyForm Noncommercial 1.0.0. Free for noncommercial use;
+#              commercial use requires written permission from the owner.
+#              Full terms in LICENSE at the project root.
+#  Warranty  : None. Provided as is; the owner is not liable for any
+#              damages arising from its use (No Liability, LICENSE).
+#  SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+################################################################################
+
+# CI for git_sync: lint every shell script, then run the tests on Linux and
+# on macOS. macOS matters because /bin/bash there is bash 3.2, the oldest
+# bash the scripts promise to support.
+#
+# The last job, "CI passed", is the one check the main-branch ruleset
+# requires (documents/solo_pr_workflow.md). It fails when any other job did
+# not succeed, so jobs can be added or renamed here without touching the
+# ruleset. 'if: always()' matters: without it the job would be skipped when a
+# job it needs fails, and GitHub counts a skipped required check as passing.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to the same branch or PR cancels the run it makes obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check bash syntax
+        run: for f in *.sh tests/*.sh; do bash -n "$f" || exit 1; done
+
+      - name: Run shellcheck
+        run: |
+          command -v shellcheck >/dev/null || sudo apt-get install -y shellcheck
+          shellcheck --version | head -2
+          shellcheck -- *.sh tests/*.sh
+
+      - name: Smoke-test git_sync.sh
+        run: bash git_sync.sh --help >/dev/null
+
+  test:
+    name: tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Show tool versions
+        run: |
+          /bin/bash --version | head -1
+          git --version
+
+      # Run both the harness and the script under the system bash, which is
+      # 3.2 on macOS, so a bash-4-only feature fails here and not for a user.
+      - name: Run git-ignore.sh tests
+        run: TEST_BASH=/bin/bash /bin/bash tests/test_git-ignore.sh
+
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail unless every job succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for r in $RESULTS; do
+            [ "$r" = success ] || { echo "::error::a CI job ended with '$r'"; exit 1; }
+          done

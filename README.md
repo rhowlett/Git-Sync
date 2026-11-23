@@ -1,7 +1,10 @@
-<!-- v0.1 -->
+<!-- v0.2 -->
 # git_sync
 
 Keep a folder full of git repos in sync from one command.
+
+The repo also holds [`git-ignore.sh`](#git-ignoresh), a small helper that adds
+a pattern to `.gitignore` and stops tracking the files it matches.
 
 `git_sync.sh` looks through the folder you keep your repos in (for example
 `~/GitHub`) and finds every git repo in it. For each one it fetches from the
@@ -221,6 +224,68 @@ link if you made one. The script stores no settings or other files.
 | A repo deeper than 8 levels isn't found | Use `-d 12` (or more). |
 | `bad interpreter` or `$'\r': command not found` | The file picked up Windows line endings. Fix with `sed -i '' 's/\r$//' git_sync.sh` on macOS or `sed -i 's/\r$//' git_sync.sh` on Linux. |
 
+## git-ignore.sh
+
+Add a pattern to `.gitignore` and untrack the files it matches, or untrack
+everything your `.gitignore` files already exclude. The files stay on disk;
+the removal is staged for you to review and commit. Like `git_sync.sh`, it
+needs only `bash` (3.2 or newer, so the macOS one works) and `git` 2.26 or
+newer.
+
+### Install
+
+Put it on your `PATH` as `git-ignore` and git picks it up as a sub-command,
+so `git ignore` works in every repo:
+
+```bash
+mkdir -p ~/.local/bin
+cp git-ignore.sh ~/.local/bin/git-ignore
+chmod +x ~/.local/bin/git-ignore
+```
+
+(See [Running it from anywhere](#running-it-from-anywhere-optional) for
+getting `~/.local/bin` onto your `PATH`.)
+
+### Usage
+
+```bash
+git ignore '.DS_Store'        # add the pattern, untrack every .DS_Store
+git ignore 'build/'           # a build folder at any depth
+git ignore -n '*.log'         # dry run: show what would happen
+git ignore --sync             # untrack whatever .gitignore already excludes
+git ignore -h                 # the full help page (see below)
+```
+
+Use `-h` for help: with `git ignore --help`, git itself takes over and looks
+for a man page, which doesn't exist. (Run directly as `git-ignore.sh`, both
+`-h` and `--help` work.) Quote patterns so your shell doesn't expand them.
+Matching is done by git itself, so a pattern means exactly what it means in
+`.gitignore`. Then:
+
+```bash
+git status                    # review
+git add .gitignore && git commit -m "Stop tracking build output"
+```
+
+When that commit is pulled on another machine, git deletes those files from
+that machine's working copy, because they left the repository. Copy anything
+you still need there before pulling.
+
+## Development
+
+Changes reach `main` through pull requests that CI (shellcheck plus the tests
+on Linux and macOS) must pass first. The one-time GitHub setup and the
+step-by-step loop are in
+[documents/solo_pr_workflow.md](documents/solo_pr_workflow.md). Changes are
+logged in [documents/change_log.md](documents/change_log.md).
+
+Run the same checks as CI before pushing:
+
+```bash
+shellcheck -- *.sh tests/*.sh
+bash tests/test_git-ignore.sh
+```
+
 <!-- BRICKCHIP-LICENSE:BEGIN -->
 ## Copyright & License
 
@@ -254,6 +319,8 @@ Every file that starts something in this project carries a `BRICKCHIP-ENTRY-POIN
 
 | File | Runs |
 |---|---|
+| `git-ignore.sh` | Add a .gitignore pattern and untrack the files it matches |
 | `git_sync.sh` | Check all repos in a folder; commit, pull and push interactively |
+| `tests/test_git-ignore.sh` | Run the git-ignore.sh tests |
 
 <!-- BRICKCHIP-LICENSE:END -->
